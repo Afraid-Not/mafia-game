@@ -3,7 +3,7 @@ from mafia.phases.day import run_day_freetalk, run_day_roundrobin
 from mafia.player import MockPlayer
 
 
-def test_roundrobin_each_alive_player_speaks_twice_by_default():
+def test_roundrobin_each_alive_player_speaks_once_by_default():
     players = [
         Player(id="p1", name="A", role=Role.CIVILIAN),
         Player(id="p2", name="B", role=Role.MAFIA, is_mafia_boss=True),
@@ -18,8 +18,7 @@ def test_roundrobin_each_alive_player_speaks_twice_by_default():
     run_day_roundrobin(state, actors)
     speeches = [e for e in state.public_log if e["kind"] == "speak"]
     speakers = [s["speaker_id"] for s in speeches]
-    # 2 passes × 2 alive players = 4 speeches; dead p3 never speaks
-    assert sorted(speakers) == ["p1", "p1", "p2", "p2"]
+    assert sorted(speakers) == ["p1", "p2"]
     assert "p3" not in speakers
 
 

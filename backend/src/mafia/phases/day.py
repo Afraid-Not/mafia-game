@@ -9,12 +9,9 @@ from mafia.player import DecisionContext, PlayerInterface
 def run_day_roundrobin(
     state: GameState,
     actors: dict[str, PlayerInterface],
-    passes: int = 2,
+    passes: int = 1,
 ) -> None:
-    """Every alive player speaks once per pass. `passes` defaults to 2 so each
-    AI gets at least two turns per day — gives mafia and observers enough room
-    to react and adjust before voting.
-    """
+    """Every alive player speaks once per pass."""
     for pass_num in range(1, passes + 1):
         for player in state.alive_players():
             result = actors[player.id].decide(
