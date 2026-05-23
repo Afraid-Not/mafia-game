@@ -133,6 +133,7 @@ def run_night(state: GameState, actors: dict[str, PlayerInterface]) -> None:
             {
                 "kind": "night_death",
                 "victim_id": target.id,
+                "victim_role": target.role.value,
                 "day_number": state.day_number,
             }
         )

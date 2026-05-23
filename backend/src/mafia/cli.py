@@ -102,7 +102,11 @@ def _print_event(
         console.print(f"  [{color}]{escape(voter)}: {vote}[/]")
     elif kind == "execution":
         victim = _name_with_job(state, jobs, e["candidate_id"])
-        console.print(f"[bold red]💀 처형: {escape(victim)} (찬성 {e['yes']} vs 반대 {e['no']})[/]")
+        role = e.get("role", "?")
+        console.print(
+            f"[bold red]💀 처형: {escape(victim)} — 역할은 [{role}]였습니다. "
+            f"(찬성 {e['yes']} vs 반대 {e['no']})[/]"
+        )
     elif kind == "pardon":
         spared = _name_with_job(state, jobs, e["candidate_id"])
         console.print(
@@ -110,7 +114,11 @@ def _print_event(
         )
     elif kind == "night_death":
         victim = _name_with_job(state, jobs, e["victim_id"])
-        console.print(f"[bold red]🌙 밤 동안 {escape(victim)}이(가) 살해당했습니다.[/]")
+        role = e.get("victim_role", "?")
+        console.print(
+            f"[bold red]🌙 밤 동안 {escape(victim)}이(가) 살해당했습니다. "
+            f"역할은 [{role}]였습니다.[/]"
+        )
     elif kind == "night_safe":
         console.print("[bold blue]🌙 어젯밤은 아무도 죽지 않았습니다.[/]")
 

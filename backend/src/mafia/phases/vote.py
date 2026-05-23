@@ -98,11 +98,13 @@ def run_vote_updown(
 
     executed = yes_count > no_count
     if executed:
-        state.player_by_id(candidate_id).alive = False
+        candidate = state.player_by_id(candidate_id)
+        candidate.alive = False
         state.public_log.append(
             {
                 "kind": "execution",
                 "candidate_id": candidate_id,
+                "role": candidate.role.value,
                 "yes": yes_count,
                 "no": no_count,
             }

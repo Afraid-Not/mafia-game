@@ -97,7 +97,22 @@ def _format_public_log(state: GameState, max_entries: int = 60) -> str:
             lines.append(f"[찬반] {voter}: {e.get('vote', '?')}")
         elif kind == "execution":
             target = state.player_by_id(e["candidate_id"]).name
-            lines.append(f"[처형] {target} (찬성 {e.get('yes', '?')}, 반대 {e.get('no', '?')})")
+            role = e.get("role", "?")
+            lines.append(
+                f"[처형] {target} — 역할 [{role}] "
+                f"(찬성 {e.get('yes', '?')}, 반대 {e.get('no', '?')})"
+            )
+        elif kind == "pardon":
+            target = state.player_by_id(e["candidate_id"]).name
+            lines.append(
+                f"[무죄 방면] {target} (찬성 {e.get('yes', '?')}, 반대 {e.get('no', '?')})"
+            )
+        elif kind == "night_death":
+            target = state.player_by_id(e["victim_id"]).name
+            role = e.get("victim_role", "?")
+            lines.append(f"[밤 사망] {target} — 역할 [{role}]")
+        elif kind == "night_safe":
+            lines.append("[밤 결과] 아무도 죽지 않음 (의사 보호 성공)")
         elif kind == "last_words":
             target = state.player_by_id(e["speaker_id"]).name
             lines.append(f"[최후변론] {target}: {e.get('text', '')}")
