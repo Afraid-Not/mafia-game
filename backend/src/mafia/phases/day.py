@@ -1,4 +1,5 @@
 """Day phase: round-robin speeches and free-talk."""
+
 from __future__ import annotations
 
 from mafia.models import GameState
@@ -11,13 +12,15 @@ def run_day_roundrobin(state: GameState, actors: dict[str, PlayerInterface]) -> 
         result = actors[player.id].decide(
             DecisionContext(state=state, actor_id=player.id, action="speak_turn")
         )
-        state.public_log.append({
-            "kind": "speak",
-            "speaker_id": player.id,
-            "text": result["text"],
-            "day_number": state.day_number,
-            "phase": "day_roundrobin",
-        })
+        state.public_log.append(
+            {
+                "kind": "speak",
+                "speaker_id": player.id,
+                "text": result["text"],
+                "day_number": state.day_number,
+                "phase": "day_roundrobin",
+            }
+        )
 
 
 def run_day_freetalk(
@@ -35,10 +38,12 @@ def run_day_freetalk(
             scores.append((int(result["eagerness"]), player.id, result["text"]))
         scores.sort(reverse=True)
         eagerness, speaker_id, text = scores[0]
-        state.public_log.append({
-            "kind": "speak_freetalk",
-            "speaker_id": speaker_id,
-            "text": text,
-            "eagerness": eagerness,
-            "day_number": state.day_number,
-        })
+        state.public_log.append(
+            {
+                "kind": "speak_freetalk",
+                "speaker_id": speaker_id,
+                "text": text,
+                "eagerness": eagerness,
+                "day_number": state.day_number,
+            }
+        )

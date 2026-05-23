@@ -129,7 +129,7 @@ def test_updown_cleric_vote_counts_double():
     state = GameState(players=players, day_number=1, phase=Phase.VOTE_UPDOWN, cleric_id="p1")
     actors = {
         "p1": MockPlayer({"vote_updown": "yes"}),  # +2
-        "p2": MockPlayer({"vote_updown": "no"}),    # +1
+        "p2": MockPlayer({"vote_updown": "no"}),  # +1
         "p3": MockPlayer({}),
     }
     executed = run_vote_updown(state, actors, candidate_id="p3")

@@ -1,4 +1,5 @@
 """Core enums and dataclasses for the mafia game."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -42,9 +43,9 @@ class Player:
     is_mafia_boss: bool = False
     alive: bool = True
     # Private memory — info only this player should know
-    known_mafia_ids: list[str] = field(default_factory=list)        # mafia knows allies
+    known_mafia_ids: list[str] = field(default_factory=list)  # mafia knows allies
     police_investigations: list[tuple[str, bool]] = field(default_factory=list)
-    doctor_protections: list[str] = field(default_factory=list)     # day_number index
+    doctor_protections: list[str] = field(default_factory=list)  # day_number index
 
 
 @dataclass

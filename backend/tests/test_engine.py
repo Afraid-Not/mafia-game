@@ -55,20 +55,22 @@ def _all_yes_actors(state, *, kill_target, nominate_target):
     """Helper to build a deterministic actor set."""
     actors: dict[str, MockPlayer] = {}
     for p in state.players:
-        actors[p.id] = MockPlayer({
-            "speak_turn": f"I am {p.id}",
-            "speak_freetalk": {"eagerness": 5, "text": "talk"},
-            "vote_nominate": nominate_target,
-            "vote_updown": "yes",
-            "last_words": "최후",
-            "night_kill": kill_target,
-            "night_boss_propose": kill_target,
-            "night_underling_respond": "yes",
-            "night_boss_dialog": {"text": "확정", "final_target_id": kill_target},
-            "night_doctor_protect": p.id,
-            "night_police_investigate": kill_target,
-            "mafia_chat": "",
-        })
+        actors[p.id] = MockPlayer(
+            {
+                "speak_turn": f"I am {p.id}",
+                "speak_freetalk": {"eagerness": 5, "text": "talk"},
+                "vote_nominate": nominate_target,
+                "vote_updown": "yes",
+                "last_words": "최후",
+                "night_kill": kill_target,
+                "night_boss_propose": kill_target,
+                "night_underling_respond": "yes",
+                "night_boss_dialog": {"text": "확정", "final_target_id": kill_target},
+                "night_doctor_protect": p.id,
+                "night_police_investigate": kill_target,
+                "mafia_chat": "",
+            }
+        )
     return actors
 
 

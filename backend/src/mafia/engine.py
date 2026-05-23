@@ -1,4 +1,5 @@
 """GameEngine: setup and state machine driver."""
+
 from __future__ import annotations
 
 import random
