@@ -8,17 +8,15 @@ import sys
 from typing import Any
 
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 
 from mafia.agents.llm_agent import LLMAgent
 from mafia.agents.personas import load_personas
 from mafia.engine import run_game, setup_game
 from mafia.llm.claude_client import ClaudeClient
-from mafia.models import GameState, Role, Team
+from mafia.models import GameState, Team
 from mafia.player import PlayerInterface
-
-# Module-level console for interactive use; tests override via run_demo(console=...)
-_CONSOLE = Console(file=sys.stdout)
 
 
 def _make_client() -> ClaudeClient:
@@ -41,45 +39,61 @@ def build_agents_for_state(
 def _print_setup(state: GameState, console: Console) -> None:
     rows = []
     for p in state.players:
-        role_hint = "(혼자만 알려진 역할)" if p.role != Role.CIVILIAN else ""
-        rows.append(f"  {p.id} {p.name} [{p.role.value}] {role_hint}")
-    console.print(Panel("\n".join(rows), title="플레이어 (디버그용)", border_style="dim"))
+        rows.append(f"  {p.id} {p.name} ({p.role.value})")
+    console.print(Panel("\n".join(rows), title="역할 (디버그)", border_style="dim"))
 
 
-def _print_log_tail(state: GameState, since: int, console: Console) -> int:
-    for e in state.public_log[since:]:
-        kind = e.get("kind")
-        if kind == "speak":
-            speaker = state.player_by_id(e["speaker_id"]).name
-            console.print(f"[cyan]{speaker}[/]: {e['text']}")
-        elif kind == "speak_freetalk":
-            speaker = state.player_by_id(e["speaker_id"]).name
-            console.print(f"[cyan]{speaker}[/] (자유): {e['text']}")
-        elif kind == "vote_nominate":
-            voter = state.player_by_id(e["voter_id"]).name
-            target_id = e["target_id"]
-            target = (
-                state.player_by_id(target_id).name
-                if any(p.id == target_id for p in state.players)
-                else target_id
-            )
-            console.print(f"  [yellow]{voter}[/] 지명 → [bold]{target}[/]")
-        elif kind == "vote_updown":
-            voter = state.player_by_id(e["voter_id"]).name
-            vote = e["vote"]
-            color = "green" if vote == "yes" else "red"
-            console.print(f"  [{color}]{voter}: {vote}[/]")
-        elif kind == "last_words":
-            speaker = state.player_by_id(e["speaker_id"]).name
-            console.print(f"[magenta]{speaker} 최후변론[/]: {e['text']}")
-        elif kind == "execution":
-            victim = state.player_by_id(e["candidate_id"]).name
-            console.print(f"[bold red]💀 처형: {victim} (찬성 {e['yes']} vs 반대 {e['no']})[/]")
-    return len(state.public_log)
+class _StreamingLog(list):
+    """Subclass of list that fires a callback after each append.
+
+    Used to hook into GameEngine's `state.public_log.append(...)` so that the CLI
+    can print events as they happen — without changing the engine's API.
+    """
+
+    def __init__(self, on_append):
+        super().__init__()
+        self._on_append = on_append
+
+    def append(self, item: dict) -> None:  # type: ignore[override]
+        super().append(item)
+        self._on_append(item)
 
 
-class _LoggingActors(dict):
-    """Wraps actors so each decide() prints a brief marker between phases."""
+def _name(state: GameState, pid: str) -> str:
+    for p in state.players:
+        if p.id == pid:
+            return p.name
+    return pid
+
+
+def _print_event(state: GameState, e: dict, console: Console, day_ref: dict) -> None:
+    day = e.get("day_number", day_ref["current"])
+    if day != day_ref["current"]:
+        day_ref["current"] = day
+        console.rule(f"[bold]Day {day}[/]")
+
+    kind = e.get("kind")
+    if kind == "speak":
+        speaker = _name(state, e["speaker_id"])
+        console.print(f"[cyan]{escape(speaker)}[/]: {escape(e['text'])}")
+    elif kind == "speak_freetalk":
+        speaker = _name(state, e["speaker_id"])
+        console.print(f"[cyan]{escape(speaker)}[/] (자유): {escape(e['text'])}")
+    elif kind == "last_words":
+        speaker = _name(state, e["speaker_id"])
+        console.print(f"[magenta]{escape(speaker)} 최후변론[/]: {escape(e['text'])}")
+    elif kind == "vote_nominate":
+        voter = _name(state, e["voter_id"])
+        target = _name(state, e["target_id"])
+        console.print(f"  [yellow]{escape(voter)}[/] 지명 → [bold]{escape(target)}[/]")
+    elif kind == "vote_updown":
+        voter = _name(state, e["voter_id"])
+        vote = e["vote"]
+        color = "green" if vote == "yes" else "red"
+        console.print(f"  [{color}]{escape(voter)}: {vote}[/]")
+    elif kind == "execution":
+        victim = _name(state, e["candidate_id"])
+        console.print(f"[bold red]💀 처형: {escape(victim)} (찬성 {e['yes']} vs 반대 {e['no']})[/]")
 
 
 def run_demo(
@@ -90,7 +104,6 @@ def run_demo(
     max_days: int = 20,
     console: Console | None = None,
 ) -> str:
-    # Create a fresh console pointing to current sys.stdout so capsys can capture it.
     if console is None:
         console = Console(file=sys.stdout)
 
@@ -100,21 +113,16 @@ def run_demo(
 
     _print_setup(state, console)
     console.rule("[bold]Day 1 — 첫 번째 밤[/]")
+    console.print("[dim]밤이 흐르고 있습니다... (LLM 호출 중)[/]")
 
-    # Simpler MVP: run the entire game then dump the log day-by-day.
+    # Hook public_log so events stream live.
+    day_ref = {"current": 1}
+    state.public_log = _StreamingLog(on_append=lambda e: _print_event(state, e, console, day_ref))
+
     winner = run_game(state, actors, max_days=max_days)
 
-    # Stream log retrospectively, day-by-day
-    current_day = 1
-    console.rule(f"[bold]Day {current_day} 진행[/]")
-    for i, e in enumerate(state.public_log):
-        day = e.get("day_number", current_day)
-        if day != current_day:
-            current_day = day
-            console.rule(f"[bold]Day {current_day}[/]")
-        # Print the entry using same handler
-        _print_log_tail(state, i, console)
-
+    # Show night kill summary (state.last_night_death is only the latest;
+    # for retrospective deaths use player.alive flag against role table at end).
     console.rule("[bold red]GAME OVER[/]")
     if state.winner == Team.MAFIA:
         console.print("[bold red]마피아 승리![/]")
@@ -123,7 +131,6 @@ def run_demo(
     else:
         console.print(f"[yellow]게임 종료 ({winner})[/]")
 
-    # Reveal roles
     rows = [
         f"  {p.id} {p.name}: {p.role.value} ({'생존' if p.alive else '사망'})"
         for p in state.players
@@ -139,15 +146,17 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-days", type=int, default=20)
     args = parser.parse_args(argv)
     client = _make_client()
+    console = Console(file=sys.stdout)
     try:
         run_demo(
             player_count=args.players,
             seed=args.seed,
             client=client,
             max_days=args.max_days,
+            console=console,
         )
     except KeyboardInterrupt:
-        _CONSOLE.print("\n[yellow]중단되었습니다.[/]")
+        console.print("\n[yellow]중단되었습니다.[/]")
         return 130
     return 0
 

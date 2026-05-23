@@ -1,4 +1,5 @@
 """Real-API e2e smoke test. Skipped unless ANTHROPIC_API_KEY is set."""
+
 import os
 import random
 
