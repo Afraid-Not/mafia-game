@@ -94,7 +94,19 @@ def run_night(state: GameState, actors: dict[str, PlayerInterface]) -> None:
     else:
         target_id = _decide_mafia_target_multi(state, mafia, actors)
 
-    # No doctor/police yet — extended in Tasks 10/11.
-    target = state.player_by_id(target_id)
-    target.alive = False
-    state.last_night_death = target.id
+    # Doctor protection
+    protected_id: str | None = None
+    doctor = next((p for p in state.alive_players() if p.role == Role.DOCTOR), None)
+    if doctor is not None:
+        decision = actors[doctor.id].decide(
+            DecisionContext(state=state, actor_id=doctor.id, action="night_doctor_protect")
+        )
+        protected_id = decision["target_id"]
+        doctor.doctor_protections.append(protected_id)
+
+    if protected_id == target_id:
+        state.last_night_death = None
+    else:
+        target = state.player_by_id(target_id)
+        target.alive = False
+        state.last_night_death = target.id

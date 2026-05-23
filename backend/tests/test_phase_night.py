@@ -87,3 +87,37 @@ def test_multi_mafia_underling_disagrees_boss_changes_mind():
     }
     run_night(state, actors)
     assert state.last_night_death == "c2"
+
+
+def test_doctor_protects_mafia_target_survives():
+    players = [
+        Player(id="m1", name="M", role=Role.MAFIA, is_mafia_boss=True),
+        Player(id="d1", name="Doc", role=Role.DOCTOR),
+        Player(id="c1", name="A", role=Role.CIVILIAN),
+    ]
+    state = GameState(players=players, day_number=0, phase=Phase.NIGHT)
+    actors = {
+        "m1": MockPlayer({"night_kill": "c1"}),
+        "d1": MockPlayer({"night_doctor_protect": "c1"}),
+        "c1": MockPlayer({}),
+    }
+    run_night(state, actors)
+    assert state.player_by_id("c1").alive is True
+    assert state.last_night_death is None
+
+
+def test_doctor_protects_someone_else_target_dies():
+    players = [
+        Player(id="m1", name="M", role=Role.MAFIA, is_mafia_boss=True),
+        Player(id="d1", name="Doc", role=Role.DOCTOR),
+        Player(id="c1", name="A", role=Role.CIVILIAN),
+    ]
+    state = GameState(players=players, day_number=0, phase=Phase.NIGHT)
+    actors = {
+        "m1": MockPlayer({"night_kill": "c1"}),
+        "d1": MockPlayer({"night_doctor_protect": "d1"}),  # self-protect
+        "c1": MockPlayer({}),
+    }
+    run_night(state, actors)
+    assert state.player_by_id("c1").alive is False
+    assert state.last_night_death == "c1"
