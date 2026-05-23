@@ -107,6 +107,7 @@ def run_vote_updown(
                 "role": candidate.role.value,
                 "yes": yes_count,
                 "no": no_count,
+                "day_number": state.day_number,
             }
         )
     else:
@@ -116,6 +117,7 @@ def run_vote_updown(
                 "candidate_id": candidate_id,
                 "yes": yes_count,
                 "no": no_count,
+                "day_number": state.day_number,
             }
         )
     return executed

@@ -98,21 +98,29 @@ def _format_public_log(state: GameState, max_entries: int = 60) -> str:
         elif kind == "execution":
             target = state.player_by_id(e["candidate_id"]).name
             role = e.get("role", "?")
+            day = e.get("day_number", "?")
             lines.append(
-                f"[처형] {target} — 역할 [{role}] "
-                f"(찬성 {e.get('yes', '?')}, 반대 {e.get('no', '?')})"
+                f"[Day {day} 낮 — 시민 투표로 처형] {target} (실제 역할: {role}, "
+                f"찬성 {e.get('yes', '?')} 반대 {e.get('no', '?')})"
             )
         elif kind == "pardon":
             target = state.player_by_id(e["candidate_id"]).name
+            day = e.get("day_number", "?")
             lines.append(
-                f"[무죄 방면] {target} (찬성 {e.get('yes', '?')}, 반대 {e.get('no', '?')})"
+                f"[Day {day} 낮 — 처형 부결, 생존] {target} "
+                f"(찬성 {e.get('yes', '?')} 반대 {e.get('no', '?')})"
             )
         elif kind == "night_death":
             target = state.player_by_id(e["victim_id"]).name
             role = e.get("victim_role", "?")
-            lines.append(f"[밤 사망] {target} — 역할 [{role}]")
+            day = e.get("day_number", "?")
+            lines.append(f"[Day {day} 밤 — 마피아 살해] {target} (실제 역할: {role})")
         elif kind == "night_safe":
-            lines.append("[밤 결과] 아무도 죽지 않음 (의사 보호 성공)")
+            day = e.get("day_number", "?")
+            lines.append(
+                f"[Day {day} 밤 — 의사 보호 성공] 마피아가 누군가를 노렸으나 "
+                "의사의 보호로 그 타겟이 생존. 사망자 없음."
+            )
         elif kind == "last_words":
             target = state.player_by_id(e["speaker_id"]).name
             lines.append(f"[최후변론] {target}: {e.get('text', '')}")
