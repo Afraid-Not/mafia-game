@@ -131,7 +131,15 @@ def _candidates_list(state: GameState, actor: Player) -> str:
 
 def build_user_prompt(*, state: GameState, actor: Player, action: str, payload: dict) -> str:
     log = _format_public_log(state)
-    base = f"## 지금까지 공개 로그 (Day {state.day_number})\n{log}\n\n"
+    day_note = ""
+    if state.day_number == 1:
+        day_note = (
+            "**상황 안내**: 지금은 첫째 날 아침입니다. **아직 밤이 한 번도 지나지 않았으므로**\n"
+            "사망자는 없으며, 누가 누구를 죽였는지에 대한 정보가 전혀 없습니다.\n"
+            '"어젯밤" "누가 죽었어" 같은 표현은 사용하지 마세요.\n'
+            "자기소개·인상·관찰부터 시작하세요.\n\n"
+        )
+    base = f"{day_note}## 지금까지 공개 로그 (Day {state.day_number})\n{log}\n\n"
 
     if action == "speak_turn":
         return base + (
