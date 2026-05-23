@@ -69,6 +69,25 @@ def test_freetalk_caps_speakers_per_round_to_max():
     assert sorted([s["speaker_id"] for s in speeches]) == ["p1", "p2"]
 
 
+def test_freetalk_each_player_at_most_once_across_rounds():
+    players = [
+        Player(id="p1", name="A", role=Role.CIVILIAN),
+        Player(id="p2", name="B", role=Role.CIVILIAN),
+        Player(id="p3", name="C", role=Role.CIVILIAN),
+    ]
+    state = GameState(players=players, day_number=1, phase=Phase.DAY_FREETALK)
+    actors = {
+        "p1": MockPlayer({"freetalk_eagerness": 9, "speak_freetalk": "p1"}),
+        "p2": MockPlayer({"freetalk_eagerness": 8, "speak_freetalk": "p2"}),
+        "p3": MockPlayer({"freetalk_eagerness": 7, "speak_freetalk": "p3"}),
+    }
+    # 3 rounds × 2 speakers/round, but only 3 distinct players → 3 speeches max
+    run_day_freetalk(state, actors, max_rounds=3, max_per_round=2, min_eagerness=0)
+    speeches = [e for e in state.public_log if e["kind"] == "speak_freetalk"]
+    speakers = [s["speaker_id"] for s in speeches]
+    assert sorted(speakers) == ["p1", "p2", "p3"]
+
+
 def test_freetalk_skips_round_when_nobody_eager_enough():
     players = [
         Player(id="p1", name="A", role=Role.CIVILIAN),

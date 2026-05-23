@@ -36,14 +36,18 @@ def run_day_freetalk(
     max_per_round: int = 3,
     min_eagerness: int = 3,
 ) -> None:
-    """Each round, every alive player returns an eagerness score (cheap heuristic);
-    up to `max_per_round` speakers with eagerness >= `min_eagerness` actually speak
-    (LLM call). Default lets up to 3 people pile on each round and keeps quiet
-    players from being forced to fill the air.
+    """Each round, every alive player who has not yet spoken in this free-talk
+    phase returns an eagerness score (cheap heuristic); up to `max_per_round`
+    speakers with eagerness >= `min_eagerness` actually speak (LLM call). Each
+    player speaks at most once across all rounds so we don't get the same agent
+    re-stating themselves in a slightly different way.
     """
+    spoken: set[str] = set()
     for _ in range(max_rounds):
         scored: list[tuple[int, str]] = []
         for player in state.alive_players():
+            if player.id in spoken:
+                continue
             result = actors[player.id].decide(
                 DecisionContext(state=state, actor_id=player.id, action="freetalk_eagerness")
             )
@@ -52,7 +56,6 @@ def run_day_freetalk(
 
         winners = [(e, pid) for (e, pid) in scored[:max_per_round] if e >= min_eagerness]
         if not winners:
-            # Nobody eager enough — skip this round entirely.
             continue
 
         for eagerness, speaker_id in winners:
@@ -68,3 +71,4 @@ def run_day_freetalk(
                     "day_number": state.day_number,
                 }
             )
+            spoken.add(speaker_id)
