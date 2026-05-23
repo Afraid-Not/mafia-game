@@ -119,7 +119,20 @@ def run_night(state: GameState, actors: dict[str, PlayerInterface]) -> None:
 
     if protected_id == target_id:
         state.last_night_death = None
+        state.public_log.append(
+            {
+                "kind": "night_safe",
+                "day_number": state.day_number,
+            }
+        )
     else:
         target = state.player_by_id(target_id)
         target.alive = False
         state.last_night_death = target.id
+        state.public_log.append(
+            {
+                "kind": "night_death",
+                "victim_id": target.id,
+                "day_number": state.day_number,
+            }
+        )

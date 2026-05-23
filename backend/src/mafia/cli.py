@@ -94,6 +94,16 @@ def _print_event(state: GameState, e: dict, console: Console, day_ref: dict) -> 
     elif kind == "execution":
         victim = _name(state, e["candidate_id"])
         console.print(f"[bold red]💀 처형: {escape(victim)} (찬성 {e['yes']} vs 반대 {e['no']})[/]")
+    elif kind == "pardon":
+        spared = _name(state, e["candidate_id"])
+        console.print(
+            f"[bold green]✅ 무죄 방면: {escape(spared)} (찬성 {e['yes']} vs 반대 {e['no']})[/]"
+        )
+    elif kind == "night_death":
+        victim = _name(state, e["victim_id"])
+        console.print(f"[bold red]🌙 밤 동안 {escape(victim)}이(가) 살해당했습니다.[/]")
+    elif kind == "night_safe":
+        console.print("[bold blue]🌙 어젯밤은 아무도 죽지 않았습니다.[/]")
 
 
 def run_demo(

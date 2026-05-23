@@ -107,4 +107,13 @@ def run_vote_updown(
                 "no": no_count,
             }
         )
+    else:
+        state.public_log.append(
+            {
+                "kind": "pardon",
+                "candidate_id": candidate_id,
+                "yes": yes_count,
+                "no": no_count,
+            }
+        )
     return executed
