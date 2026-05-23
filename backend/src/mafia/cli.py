@@ -41,7 +41,7 @@ def _print_setup(state: GameState, jobs: dict[str, str], console: Console) -> No
     for p in state.players:
         job = jobs.get(p.id, "")
         label = f"{p.name}({job})" if job else p.name
-        rows.append(f"  {p.id} {label} [{p.role.value}]")
+        rows.append(f"  {p.id} {label} 〔{p.role.value}〕")
     console.print(Panel("\n".join(rows), title="역할 (디버그)", border_style="dim"))
 
 
@@ -123,6 +123,43 @@ def _print_event(
         console.print("[bold blue]🌙 어젯밤은 아무도 죽지 않았습니다.[/]")
 
 
+def _print_debug(state: GameState, e: dict, console: Console, jobs: dict[str, str]) -> None:
+    """Render private/hidden actions as dim debug output (spectator-only)."""
+    kind = e.get("kind")
+    if kind == "single_kill":
+        mafia = _name_with_job(state, jobs, e["mafia_id"])
+        target = _name_with_job(state, jobs, e["target_id"])
+        console.print(f"[dim]  🔪 〔마피아〕{escape(mafia)} → 타겟: {escape(target)}[/]")
+    elif kind == "propose":
+        speaker = _name_with_job(state, jobs, e["speaker_id"])
+        target = _name_with_job(state, jobs, e["target_id"])
+        text = e.get("text", "")
+        console.print(
+            f"[dim]  🔪 〔두목〕{escape(speaker)} → {escape(target)} 제안: {escape(text)}[/]"
+        )
+    elif kind == "respond":
+        speaker = _name_with_job(state, jobs, e["speaker_id"])
+        agree = e.get("agree", "?")
+        text = e.get("text", "")
+        emoji = "✅" if agree == "yes" else "❌"
+        console.print(f"[dim]    {emoji} 〔부하〕{escape(speaker)} ({agree}): {escape(text)}[/]")
+    elif kind == "dissent":
+        speaker = _name_with_job(state, jobs, e["speaker_id"])
+        console.print(f"[dim]    💬 〔부하〕{escape(speaker)}: {escape(e.get('text', ''))}[/]")
+    elif kind == "final":
+        speaker = _name_with_job(state, jobs, e["speaker_id"])
+        console.print(f"[dim]  🔪 〔두목 최종〕{escape(speaker)}: {escape(e.get('text', ''))}[/]")
+    elif kind == "doctor_protect":
+        doctor = _name_with_job(state, jobs, e["doctor_id"])
+        target = _name_with_job(state, jobs, e["target_id"])
+        console.print(f"[dim]  🏥 〔의사〕{escape(doctor)} → 보호: {escape(target)}[/]")
+    elif kind == "police_investigate":
+        police = _name_with_job(state, jobs, e["police_id"])
+        target = _name_with_job(state, jobs, e["target_id"])
+        result = "마피아 ⚠" if e.get("is_mafia") else "시민"
+        console.print(f"[dim]  🔍 〔경찰〕{escape(police)} → 조사: {escape(target)} ({result})[/]")
+
+
 def run_demo(
     *,
     player_count: int,
@@ -150,6 +187,8 @@ def run_demo(
     state.public_log = _StreamingLog(
         on_append=lambda e: _print_event(state, e, console, day_ref, jobs)
     )
+    # Hook mafia_log so private night actions stream as debug output.
+    state.mafia_log = _StreamingLog(on_append=lambda e: _print_debug(state, e, console, jobs))
 
     winner = run_game(state, actors, max_days=max_days)
 

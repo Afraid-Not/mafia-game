@@ -14,7 +14,16 @@ def _decide_mafia_target_single(
     state: GameState, mafia: Player, actors: dict[str, PlayerInterface]
 ) -> str:
     ctx = DecisionContext(state=state, actor_id=mafia.id, action="night_kill")
-    return actors[mafia.id].decide(ctx)["target_id"]
+    target_id = actors[mafia.id].decide(ctx)["target_id"]
+    state.mafia_log.append(
+        {
+            "kind": "single_kill",
+            "mafia_id": mafia.id,
+            "target_id": target_id,
+            "day_number": state.day_number,
+        }
+    )
+    return target_id
 
 
 def _decide_mafia_target_multi(
@@ -106,6 +115,14 @@ def run_night(state: GameState, actors: dict[str, PlayerInterface]) -> None:
         )
         protected_id = decision["target_id"]
         doctor.doctor_protections.append(protected_id)
+        state.mafia_log.append(
+            {
+                "kind": "doctor_protect",
+                "doctor_id": doctor.id,
+                "target_id": protected_id,
+                "day_number": state.day_number,
+            }
+        )
 
     # Police investigation
     police = next((p for p in state.alive_players() if p.role == Role.POLICE), None)
@@ -116,6 +133,15 @@ def run_night(state: GameState, actors: dict[str, PlayerInterface]) -> None:
         investigated = state.player_by_id(decision["target_id"])
         is_mafia = investigated.role == Role.MAFIA
         police.police_investigations.append((investigated.id, is_mafia))
+        state.mafia_log.append(
+            {
+                "kind": "police_investigate",
+                "police_id": police.id,
+                "target_id": investigated.id,
+                "is_mafia": is_mafia,
+                "day_number": state.day_number,
+            }
+        )
 
     if protected_id == target_id:
         state.last_night_death = None
