@@ -102,11 +102,12 @@ def _print_event(
         console.print(f"  [{color}]{escape(voter)}: {vote}[/]")
     elif kind == "execution":
         victim = _name_with_job(state, jobs, e["candidate_id"])
-        role = e.get("role", "?")
-        console.print(
-            f"[bold red]💀 처형: {escape(victim)} — 역할은 ({role})였습니다. "
-            f"(찬성 {e['yes']} vs 반대 {e['no']})[/]"
-        )
+        role = e.get("role")
+        if role:
+            tail = f"— 마피아였습니다! (찬성 {e['yes']} vs 반대 {e['no']})"
+        else:
+            tail = f"— 역할은 비공개. (찬성 {e['yes']} vs 반대 {e['no']})"
+        console.print(f"[bold red]💀 처형: {escape(victim)} {tail}[/]")
     elif kind == "pardon":
         spared = _name_with_job(state, jobs, e["candidate_id"])
         console.print(
@@ -114,11 +115,14 @@ def _print_event(
         )
     elif kind == "night_death":
         victim = _name_with_job(state, jobs, e["victim_id"])
-        role = e.get("victim_role", "?")
-        console.print(
-            f"[bold red]🌙 밤 동안 {escape(victim)}이(가) 살해당했습니다. "
-            f"역할은 ({role})였습니다.[/]"
-        )
+        role = e.get("victim_role")
+        # Mafia would never kill its own at night, so role-revealed night deaths
+        # don't really happen in normal play — but handle it just in case.
+        if role:
+            tail = f"역할은 ({role})였습니다."
+        else:
+            tail = "역할은 비공개."
+        console.print(f"[bold red]🌙 밤 동안 {escape(victim)}이(가) 살해당했습니다. {tail}[/]")
     elif kind == "night_safe":
         console.print("[bold blue]🌙 어젯밤은 아무도 죽지 않았습니다.[/]")
 

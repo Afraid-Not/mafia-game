@@ -97,11 +97,12 @@ def _format_public_log(state: GameState, max_entries: int = 60) -> str:
             lines.append(f"[찬반] {voter}: {e.get('vote', '?')}")
         elif kind == "execution":
             target = state.player_by_id(e["candidate_id"]).name
-            role = e.get("role", "?")
+            role = e.get("role")
             day = e.get("day_number", "?")
+            role_label = f"실제 역할: {role}" if role else "역할: 비공개 (마피아가 아님)"
             lines.append(
-                f"[Day {day} 낮 — 시민 투표로 처형] {target} (실제 역할: {role}, "
-                f"찬성 {e.get('yes', '?')} 반대 {e.get('no', '?')})"
+                f"[Day {day} 낮 — 시민 투표로 처형] {target} "
+                f"({role_label}, 찬성 {e.get('yes', '?')} 반대 {e.get('no', '?')})"
             )
         elif kind == "pardon":
             target = state.player_by_id(e["candidate_id"]).name
@@ -112,9 +113,10 @@ def _format_public_log(state: GameState, max_entries: int = 60) -> str:
             )
         elif kind == "night_death":
             target = state.player_by_id(e["victim_id"]).name
-            role = e.get("victim_role", "?")
+            role = e.get("victim_role")
             day = e.get("day_number", "?")
-            lines.append(f"[Day {day} 밤 — 마피아 살해] {target} (실제 역할: {role})")
+            role_label = f"실제 역할: {role}" if role else "역할: 비공개 (마피아가 아님)"
+            lines.append(f"[Day {day} 밤 — 마피아 살해] {target} ({role_label})")
         elif kind == "night_safe":
             day = e.get("day_number", "?")
             lines.append(

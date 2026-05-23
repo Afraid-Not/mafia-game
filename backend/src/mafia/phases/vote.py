@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 
-from mafia.models import GameState
+from mafia.models import GameState, Role
 from mafia.player import DecisionContext, PlayerInterface
 from mafia.rules import vote_weight
 
@@ -100,16 +100,17 @@ def run_vote_updown(
     if executed:
         candidate = state.player_by_id(candidate_id)
         candidate.alive = False
-        state.public_log.append(
-            {
-                "kind": "execution",
-                "candidate_id": candidate_id,
-                "role": candidate.role.value,
-                "yes": yes_count,
-                "no": no_count,
-                "day_number": state.day_number,
-            }
-        )
+        event: dict = {
+            "kind": "execution",
+            "candidate_id": candidate_id,
+            "yes": yes_count,
+            "no": no_count,
+            "day_number": state.day_number,
+        }
+        # Only mafia roles are revealed on death; citizen-side roles stay hidden.
+        if candidate.role == Role.MAFIA:
+            event["role"] = candidate.role.value
+        state.public_log.append(event)
     else:
         state.public_log.append(
             {

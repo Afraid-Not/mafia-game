@@ -155,11 +155,13 @@ def run_night(state: GameState, actors: dict[str, PlayerInterface]) -> None:
         target = state.player_by_id(target_id)
         target.alive = False
         state.last_night_death = target.id
-        state.public_log.append(
-            {
-                "kind": "night_death",
-                "victim_id": target.id,
-                "victim_role": target.role.value,
-                "day_number": state.day_number,
-            }
-        )
+        event: dict = {
+            "kind": "night_death",
+            "victim_id": target.id,
+            "day_number": state.day_number,
+        }
+        # Only mafia roles are revealed; citizen-side stays hidden so cleric/police/
+        # doctor identities can't be deduced from death announcements.
+        if target.role == Role.MAFIA:
+            event["victim_role"] = target.role.value
+        state.public_log.append(event)
