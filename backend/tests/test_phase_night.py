@@ -19,3 +19,71 @@ def test_single_mafia_kills_target_no_doctor():
     assert state.player_by_id("c1").alive is False
     assert state.last_night_death == "c1"
     assert state.player_by_id("c2").alive is True
+
+
+def test_multi_mafia_all_agree_kills_proposed_target():
+    players = [
+        Player(id="m1", name="Boss", role=Role.MAFIA, is_mafia_boss=True,
+               known_mafia_ids=["m2"]),
+        Player(id="m2", name="Underling", role=Role.MAFIA, known_mafia_ids=["m1"]),
+        Player(id="c1", name="A", role=Role.CIVILIAN),
+        Player(id="c2", name="B", role=Role.CIVILIAN),
+    ]
+    state = GameState(players=players, day_number=0, phase=Phase.NIGHT)
+    actors = {
+        "m1": MockPlayer({"night_boss_propose": "c1"}),
+        "m2": MockPlayer({"night_underling_respond": "yes"}),
+        "c1": MockPlayer({}),
+        "c2": MockPlayer({}),
+    }
+    run_night(state, actors)
+    assert state.player_by_id("c1").alive is False
+    assert state.last_night_death == "c1"
+
+
+def test_multi_mafia_underling_disagrees_boss_overrides():
+    players = [
+        Player(id="m1", name="Boss", role=Role.MAFIA, is_mafia_boss=True,
+               known_mafia_ids=["m2"]),
+        Player(id="m2", name="Underling", role=Role.MAFIA, known_mafia_ids=["m1"]),
+        Player(id="c1", name="A", role=Role.CIVILIAN),
+        Player(id="c2", name="B", role=Role.CIVILIAN),
+    ]
+    state = GameState(players=players, day_number=0, phase=Phase.NIGHT)
+    actors = {
+        "m1": MockPlayer({
+            "night_boss_propose": "c1",
+            "night_boss_dialog": {"text": "그래도 c1이야", "final_target_id": "c1"},
+        }),
+        "m2": MockPlayer({"night_underling_respond": {
+            "agree": "no", "reasoning": "c2가 더 의심", "text": "c2가 어때?"
+        }}),
+        "c1": MockPlayer({}),
+        "c2": MockPlayer({}),
+    }
+    run_night(state, actors)
+    assert state.last_night_death == "c1"
+
+
+def test_multi_mafia_underling_disagrees_boss_changes_mind():
+    players = [
+        Player(id="m1", name="Boss", role=Role.MAFIA, is_mafia_boss=True,
+               known_mafia_ids=["m2"]),
+        Player(id="m2", name="Underling", role=Role.MAFIA, known_mafia_ids=["m1"]),
+        Player(id="c1", name="A", role=Role.CIVILIAN),
+        Player(id="c2", name="B", role=Role.CIVILIAN),
+    ]
+    state = GameState(players=players, day_number=0, phase=Phase.NIGHT)
+    actors = {
+        "m1": MockPlayer({
+            "night_boss_propose": "c1",
+            "night_boss_dialog": {"text": "좋아 c2로", "final_target_id": "c2"},
+        }),
+        "m2": MockPlayer({"night_underling_respond": {
+            "agree": "no", "reasoning": "c2", "text": "c2가 더 의심"
+        }}),
+        "c1": MockPlayer({}),
+        "c2": MockPlayer({}),
+    }
+    run_night(state, actors)
+    assert state.last_night_death == "c2"
