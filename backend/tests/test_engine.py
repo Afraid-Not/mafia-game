@@ -12,10 +12,10 @@ def test_setup_game_assigns_correct_roles_for_6_players():
     role_counts = {r: 0 for r in Role}
     for p in state.players:
         role_counts[p.role] += 1
-    assert role_counts[Role.MAFIA] == 2
+    assert role_counts[Role.MAFIA] == 1
     assert role_counts[Role.POLICE] == 1
     assert role_counts[Role.DOCTOR] == 1
-    assert role_counts[Role.CIVILIAN] == 2
+    assert role_counts[Role.CIVILIAN] == 3
     assert role_counts[Role.CLERIC] == 0
 
 

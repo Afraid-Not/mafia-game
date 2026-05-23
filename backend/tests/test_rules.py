@@ -11,12 +11,12 @@ from mafia.rules import check_winner, role_distribution, vote_weight
     [
         (4, {Role.MAFIA: 1, Role.POLICE: 1, Role.CIVILIAN: 2}),
         (5, {Role.MAFIA: 1, Role.POLICE: 1, Role.CIVILIAN: 3}),
-        (6, {Role.MAFIA: 2, Role.POLICE: 1, Role.DOCTOR: 1, Role.CIVILIAN: 2}),
+        (6, {Role.MAFIA: 1, Role.POLICE: 1, Role.DOCTOR: 1, Role.CIVILIAN: 3}),
         (7, {Role.MAFIA: 2, Role.POLICE: 1, Role.DOCTOR: 1, Role.CIVILIAN: 3}),
-        (8, {Role.MAFIA: 3, Role.POLICE: 1, Role.DOCTOR: 1, Role.CLERIC: 1, Role.CIVILIAN: 2}),
-        (9, {Role.MAFIA: 3, Role.POLICE: 1, Role.DOCTOR: 1, Role.CLERIC: 1, Role.CIVILIAN: 3}),
-        (10, {Role.MAFIA: 4, Role.POLICE: 1, Role.DOCTOR: 1, Role.CLERIC: 1, Role.CIVILIAN: 3}),
-        (11, {Role.MAFIA: 4, Role.POLICE: 1, Role.DOCTOR: 1, Role.CLERIC: 1, Role.CIVILIAN: 4}),
+        (8, {Role.MAFIA: 2, Role.POLICE: 1, Role.DOCTOR: 1, Role.CLERIC: 1, Role.CIVILIAN: 3}),
+        (9, {Role.MAFIA: 2, Role.POLICE: 1, Role.DOCTOR: 1, Role.CLERIC: 1, Role.CIVILIAN: 4}),
+        (10, {Role.MAFIA: 3, Role.POLICE: 1, Role.DOCTOR: 1, Role.CLERIC: 1, Role.CIVILIAN: 4}),
+        (11, {Role.MAFIA: 3, Role.POLICE: 1, Role.DOCTOR: 1, Role.CLERIC: 1, Role.CIVILIAN: 5}),
     ],
 )
 def test_role_distribution(n, expected):

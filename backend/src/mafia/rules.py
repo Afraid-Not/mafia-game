@@ -5,15 +5,16 @@ from __future__ import annotations
 from mafia.models import GameState, Role, Team
 
 # (mafia, police, doctor, cleric) for player counts 4..11. Civilians fill the rest.
+# Mafia count: 4-6 → 1, 7-9 → 2, 10-11 → 3.
 _DISTRIBUTION_TABLE: dict[int, tuple[int, int, int, int]] = {
     4: (1, 1, 0, 0),
     5: (1, 1, 0, 0),
-    6: (2, 1, 1, 0),
+    6: (1, 1, 1, 0),
     7: (2, 1, 1, 0),
-    8: (3, 1, 1, 1),
-    9: (3, 1, 1, 1),
-    10: (4, 1, 1, 1),
-    11: (4, 1, 1, 1),
+    8: (2, 1, 1, 1),
+    9: (2, 1, 1, 1),
+    10: (3, 1, 1, 1),
+    11: (3, 1, 1, 1),
 }
 
 
