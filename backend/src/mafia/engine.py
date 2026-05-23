@@ -4,7 +4,11 @@ from __future__ import annotations
 import random
 
 from mafia.models import GameState, Phase, Player, Role
-from mafia.rules import role_distribution
+from mafia.phases.day import run_day_freetalk, run_day_roundrobin
+from mafia.phases.night import run_night
+from mafia.phases.vote import run_last_words, run_vote_nominate, run_vote_updown
+from mafia.player import PlayerInterface
+from mafia.rules import check_winner, role_distribution
 
 
 def setup_game(player_count: int, rng: random.Random) -> GameState:
@@ -32,3 +36,48 @@ def setup_game(player_count: int, rng: random.Random) -> GameState:
         phase=Phase.NIGHT,
         cleric_id=cleric.id if cleric else None,
     )
+
+
+def run_game(
+    state: GameState,
+    actors: dict[str, PlayerInterface],
+    max_days: int = 50,
+) -> str:
+    """Drive the state machine end-to-end. Returns the winning team name."""
+    while state.day_number <= max_days:
+        # NIGHT
+        state.phase = Phase.NIGHT
+        run_night(state, actors)
+        winner = check_winner(state)
+        if winner is not None:
+            state.winner = winner
+            state.phase = Phase.GAME_OVER
+            return winner.value
+
+        # DAY
+        state.phase = Phase.DAY_ROUNDROBIN
+        run_day_roundrobin(state, actors)
+
+        state.phase = Phase.DAY_FREETALK
+        run_day_freetalk(state, actors)
+
+        # VOTE
+        state.phase = Phase.VOTE_NOMINATE
+        candidate_id = run_vote_nominate(state, actors)
+        if candidate_id is not None:
+            state.phase = Phase.LAST_WORDS
+            run_last_words(state, actors, candidate_id)
+            state.phase = Phase.VOTE_UPDOWN
+            run_vote_updown(state, actors, candidate_id)
+
+        winner = check_winner(state)
+        if winner is not None:
+            state.winner = winner
+            state.phase = Phase.GAME_OVER
+            return winner.value
+
+        state.day_number += 1
+
+    # Safety net
+    state.phase = Phase.GAME_OVER
+    return "draw"
