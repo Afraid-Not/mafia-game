@@ -1,4 +1,4 @@
-from mafia.models import Role, Phase, Team, Player, GameState
+from mafia.models import GameState, Phase, Player, Role, Team
 
 
 def test_roles_have_team_attribute():
