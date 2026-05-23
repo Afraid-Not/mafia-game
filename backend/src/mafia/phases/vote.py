@@ -1,4 +1,5 @@
 """Vote phase: nominate, last words, up/down."""
+
 from __future__ import annotations
 
 from collections import Counter
@@ -8,9 +9,7 @@ from mafia.player import DecisionContext, PlayerInterface
 from mafia.rules import vote_weight
 
 
-def run_vote_nominate(
-    state: GameState, actors: dict[str, PlayerInterface]
-) -> str | None:
+def run_vote_nominate(state: GameState, actors: dict[str, PlayerInterface]) -> str | None:
     """Collect nominate votes; return the candidate id or None on tie / empty."""
     tally: Counter[str] = Counter()
     for voter in state.alive_players():
@@ -20,12 +19,18 @@ def run_vote_nominate(
         target_id = decision["target_id"]
         weight = vote_weight(state, voter.id)
         tally[target_id] += weight
-        state.public_log.append({
-            "kind": "vote_nominate",
-            "voter_id": voter.id,
-            "target_id": target_id,
-            "weight": weight,
-        })
+        state.public_log.append(
+            {
+                "kind": "vote_nominate",
+                "voter_id": voter.id,
+                "target_id": target_id,
+                "weight": weight,
+            }
+        )
+
+    # Discard votes for dead or invalid targets
+    alive_ids = {p.id for p in state.alive_players()}
+    tally = Counter({t: c for t, c in tally.items() if t in alive_ids})
 
     if not tally:
         return None
@@ -44,12 +49,14 @@ def run_last_words(
     decision = actors[candidate_id].decide(
         DecisionContext(state=state, actor_id=candidate_id, action="last_words")
     )
-    state.public_log.append({
-        "kind": "last_words",
-        "speaker_id": candidate_id,
-        "text": decision["text"],
-        "day_number": state.day_number,
-    })
+    state.public_log.append(
+        {
+            "kind": "last_words",
+            "speaker_id": candidate_id,
+            "text": decision["text"],
+            "day_number": state.day_number,
+        }
+    )
 
 
 def run_vote_updown(
@@ -74,21 +81,25 @@ def run_vote_updown(
             yes_count += weight
         else:
             no_count += weight
-        state.public_log.append({
-            "kind": "vote_updown",
-            "voter_id": voter.id,
-            "vote": decision["vote"],
-            "weight": weight,
-            "candidate_id": candidate_id,
-        })
+        state.public_log.append(
+            {
+                "kind": "vote_updown",
+                "voter_id": voter.id,
+                "vote": decision["vote"],
+                "weight": weight,
+                "candidate_id": candidate_id,
+            }
+        )
 
     executed = yes_count > no_count
     if executed:
         state.player_by_id(candidate_id).alive = False
-        state.public_log.append({
-            "kind": "execution",
-            "candidate_id": candidate_id,
-            "yes": yes_count,
-            "no": no_count,
-        })
+        state.public_log.append(
+            {
+                "kind": "execution",
+                "candidate_id": candidate_id,
+                "yes": yes_count,
+                "no": no_count,
+            }
+        )
     return executed

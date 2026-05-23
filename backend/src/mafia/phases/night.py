@@ -20,7 +20,10 @@ def _decide_mafia_target_single(
 def _decide_mafia_target_multi(
     state: GameState, mafia: list[Player], actors: dict[str, PlayerInterface]
 ) -> str:
-    boss = next(m for m in mafia if m.is_mafia_boss)
+    boss = next((m for m in mafia if m.is_mafia_boss), None)
+    if boss is None:
+        # Boss was eliminated; promote the first alive mafia member as acting boss
+        boss = mafia[0]
     underlings = [m for m in mafia if not m.is_mafia_boss]
 
     propose = actors[boss.id].decide(
