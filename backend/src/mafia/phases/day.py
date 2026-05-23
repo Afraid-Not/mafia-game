@@ -28,21 +28,24 @@ def run_day_freetalk(
     actors: dict[str, PlayerInterface],
     max_rounds: int = 2,
 ) -> None:
-    """Each round, every alive player returns an eagerness score; the highest speaks."""
+    """Each round: ask every alive player for eagerness (cheap), let top speak (LLM)."""
     for _ in range(max_rounds):
-        scores: list[tuple[int, str, str]] = []  # (eagerness, speaker_id, text)
+        scored: list[tuple[int, str]] = []  # (eagerness, speaker_id)
         for player in state.alive_players():
             result = actors[player.id].decide(
-                DecisionContext(state=state, actor_id=player.id, action="speak_freetalk")
+                DecisionContext(state=state, actor_id=player.id, action="freetalk_eagerness")
             )
-            scores.append((int(result["eagerness"]), player.id, result["text"]))
-        scores.sort(reverse=True)
-        eagerness, speaker_id, text = scores[0]
+            scored.append((int(result["eagerness"]), player.id))
+        scored.sort(reverse=True)
+        eagerness, speaker_id = scored[0]
+        speech = actors[speaker_id].decide(
+            DecisionContext(state=state, actor_id=speaker_id, action="speak_freetalk")
+        )
         state.public_log.append(
             {
                 "kind": "speak_freetalk",
                 "speaker_id": speaker_id,
-                "text": text,
+                "text": speech["text"],
                 "eagerness": eagerness,
                 "day_number": state.day_number,
             }

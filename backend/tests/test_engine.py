@@ -58,7 +58,8 @@ def _all_yes_actors(state, *, kill_target, nominate_target):
         actors[p.id] = MockPlayer(
             {
                 "speak_turn": f"I am {p.id}",
-                "speak_freetalk": {"eagerness": 5, "text": "talk"},
+                "freetalk_eagerness": 5,
+                "speak_freetalk": "talk",
                 "vote_nominate": nominate_target,
                 "vote_updown": "yes",
                 "last_words": "최후",

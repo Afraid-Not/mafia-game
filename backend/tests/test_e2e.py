@@ -16,7 +16,8 @@ def test_e2e_civilians_win_when_they_always_vote_mafia():
         actors[p.id] = MockPlayer(
             {
                 "speak_turn": "talk",
-                "speak_freetalk": {"eagerness": 5, "text": "talk"},
+                "freetalk_eagerness": 5,
+                "speak_freetalk": "talk",
                 "vote_nominate": mafia_id,
                 "vote_updown": "yes",
                 "last_words": "안녕히",
@@ -44,7 +45,8 @@ def test_e2e_mafia_wins_when_citizens_misvote():
         actors[p.id] = MockPlayer(
             {
                 "speak_turn": "talk",
-                "speak_freetalk": {"eagerness": 3, "text": "talk"},
+                "freetalk_eagerness": 3,
+                "speak_freetalk": "talk",
                 "vote_nominate": target_civ,
                 "vote_updown": "yes",
                 "last_words": "...",
@@ -72,7 +74,8 @@ def test_e2e_8_player_game_terminates():
         actors[p.id] = MockPlayer(
             {
                 "speak_turn": "talk",
-                "speak_freetalk": {"eagerness": 5, "text": "talk"},
+                "freetalk_eagerness": 5,
+                "speak_freetalk": "talk",
                 "vote_nominate": mafia[0].id,
                 "vote_updown": "yes",
                 "last_words": "끝",

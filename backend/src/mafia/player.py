@@ -31,7 +31,8 @@ class MockPlayer:
     For `vote_nominate`, `vote_updown`, `night_kill`, `night_doctor_protect`,
       `night_police_investigate`, `night_boss_propose`, `night_underling_respond`,
       `night_boss_dialog`, `mafia_chat`: scripted value is the target id or a dict.
-    For `speak_freetalk`: scripted value is a dict with `eagerness` and `text`.
+    For `freetalk_eagerness`: scripted value is an int → wrapped as {"eagerness": int}.
+    For `speak_freetalk`: scripted value is a str → wrapped as {"text": str}.
     """
 
     def __init__(self, scripted: dict[str, Any]):
@@ -45,8 +46,18 @@ class MockPlayer:
         if ctx.action in ("speak_turn", "last_words", "mafia_chat"):
             return {"text": raw if isinstance(raw, str) else raw["text"]}
 
+        if ctx.action == "freetalk_eagerness":
+            if isinstance(raw, int):
+                return {"eagerness": raw}
+            return raw  # already dict
+
         if ctx.action == "speak_freetalk":
-            return {"eagerness": raw["eagerness"], "text": raw["text"]}
+            if isinstance(raw, str):
+                return {"text": raw}
+            # legacy dict form {"eagerness", "text"} — return text only
+            if isinstance(raw, dict) and "text" in raw:
+                return {"text": raw["text"]}
+            return raw
 
         if ctx.action in (
             "vote_nominate",

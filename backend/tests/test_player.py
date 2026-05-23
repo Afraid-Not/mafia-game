@@ -24,13 +24,22 @@ def test_mock_vote_nominate_returns_target():
     assert out == {"target_id": "p2", "reasoning": "mock"}
 
 
-def test_mock_freetalk_eagerness_and_text():
-    p = MockPlayer(scripted={"speak_freetalk": {"eagerness": 7, "text": "hmm"}})
+def test_mock_freetalk_eagerness_returns_eagerness_dict():
+    p = MockPlayer(scripted={"freetalk_eagerness": 7})
+    ctx = _ctx(
+        GameState(players=[], day_number=1, phase=Phase.DAY_FREETALK), "p1", "freetalk_eagerness"
+    )
+    out = p.decide(ctx)
+    assert out == {"eagerness": 7}
+
+
+def test_mock_speak_freetalk_returns_text_dict():
+    p = MockPlayer(scripted={"speak_freetalk": "hmm"})
     ctx = _ctx(
         GameState(players=[], day_number=1, phase=Phase.DAY_FREETALK), "p1", "speak_freetalk"
     )
     out = p.decide(ctx)
-    assert out == {"eagerness": 7, "text": "hmm"}
+    assert out == {"text": "hmm"}
 
 
 def test_mock_missing_action_raises():

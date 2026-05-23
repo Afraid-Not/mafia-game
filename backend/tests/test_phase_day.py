@@ -22,7 +22,7 @@ def test_roundrobin_collects_one_speech_per_alive_player():
     assert "p3" not in speakers
 
 
-def test_freetalk_picks_highest_eagerness_per_round_max_2_rounds():
+def test_freetalk_uses_eagerness_check_then_speaks_only_winner():
     players = [
         Player(id="p1", name="A", role=Role.CIVILIAN),
         Player(id="p2", name="B", role=Role.CIVILIAN),
@@ -30,12 +30,12 @@ def test_freetalk_picks_highest_eagerness_per_round_max_2_rounds():
     ]
     state = GameState(players=players, day_number=1, phase=Phase.DAY_FREETALK)
     actors = {
-        "p1": MockPlayer({"speak_freetalk": {"eagerness": 9, "text": "say9"}}),
-        "p2": MockPlayer({"speak_freetalk": {"eagerness": 5, "text": "say5"}}),
-        "p3": MockPlayer({"speak_freetalk": {"eagerness": 1, "text": "say1"}}),
+        "p1": MockPlayer({"freetalk_eagerness": 9, "speak_freetalk": "say9"}),
+        "p2": MockPlayer({"freetalk_eagerness": 5, "speak_freetalk": "say5"}),
+        "p3": MockPlayer({"freetalk_eagerness": 1, "speak_freetalk": "say1"}),
     }
     run_day_freetalk(state, actors, max_rounds=2)
     speeches = [e for e in state.public_log if e["kind"] == "speak_freetalk"]
-    # 2 rounds * 1 speaker per round = 2 entries, both from p1
     assert len(speeches) == 2
     assert all(s["speaker_id"] == "p1" for s in speeches)
+    assert all(s["text"] == "say9" for s in speeches)
