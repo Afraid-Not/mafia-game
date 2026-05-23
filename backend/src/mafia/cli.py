@@ -36,10 +36,12 @@ def build_agents_for_state(
     return agents
 
 
-def _print_setup(state: GameState, console: Console) -> None:
+def _print_setup(state: GameState, jobs: dict[str, str], console: Console) -> None:
     rows = []
     for p in state.players:
-        rows.append(f"  {p.id} {p.name} ({p.role.value})")
+        job = jobs.get(p.id, "")
+        label = f"{p.name}({job})" if job else p.name
+        rows.append(f"  {p.id} {label} [{p.role.value}]")
     console.print(Panel("\n".join(rows), title="역할 (디버그)", border_style="dim"))
 
 
@@ -59,14 +61,21 @@ class _StreamingLog(list):
         self._on_append(item)
 
 
-def _name(state: GameState, pid: str) -> str:
+def _name_with_job(state: GameState, jobs: dict[str, str], pid: str) -> str:
     for p in state.players:
         if p.id == pid:
-            return p.name
+            job = jobs.get(pid)
+            return f"{p.name}({job})" if job else p.name
     return pid
 
 
-def _print_event(state: GameState, e: dict, console: Console, day_ref: dict) -> None:
+def _print_event(
+    state: GameState,
+    e: dict,
+    console: Console,
+    day_ref: dict,
+    jobs: dict[str, str],
+) -> None:
     day = e.get("day_number", day_ref["current"])
     if day != day_ref["current"]:
         day_ref["current"] = day
@@ -74,33 +83,33 @@ def _print_event(state: GameState, e: dict, console: Console, day_ref: dict) -> 
 
     kind = e.get("kind")
     if kind == "speak":
-        speaker = _name(state, e["speaker_id"])
+        speaker = _name_with_job(state, jobs, e["speaker_id"])
         console.print(f"[cyan]{escape(speaker)}[/]: {escape(e['text'])}")
     elif kind == "speak_freetalk":
-        speaker = _name(state, e["speaker_id"])
+        speaker = _name_with_job(state, jobs, e["speaker_id"])
         console.print(f"[cyan]{escape(speaker)}[/] (자유): {escape(e['text'])}")
     elif kind == "last_words":
-        speaker = _name(state, e["speaker_id"])
+        speaker = _name_with_job(state, jobs, e["speaker_id"])
         console.print(f"[magenta]{escape(speaker)} 최후변론[/]: {escape(e['text'])}")
     elif kind == "vote_nominate":
-        voter = _name(state, e["voter_id"])
-        target = _name(state, e["target_id"])
+        voter = _name_with_job(state, jobs, e["voter_id"])
+        target = _name_with_job(state, jobs, e["target_id"])
         console.print(f"  [yellow]{escape(voter)}[/] 지명 → [bold]{escape(target)}[/]")
     elif kind == "vote_updown":
-        voter = _name(state, e["voter_id"])
+        voter = _name_with_job(state, jobs, e["voter_id"])
         vote = e["vote"]
         color = "green" if vote == "yes" else "red"
         console.print(f"  [{color}]{escape(voter)}: {vote}[/]")
     elif kind == "execution":
-        victim = _name(state, e["candidate_id"])
+        victim = _name_with_job(state, jobs, e["candidate_id"])
         console.print(f"[bold red]💀 처형: {escape(victim)} (찬성 {e['yes']} vs 반대 {e['no']})[/]")
     elif kind == "pardon":
-        spared = _name(state, e["candidate_id"])
+        spared = _name_with_job(state, jobs, e["candidate_id"])
         console.print(
             f"[bold green]✅ 무죄 방면: {escape(spared)} (찬성 {e['yes']} vs 반대 {e['no']})[/]"
         )
     elif kind == "night_death":
-        victim = _name(state, e["victim_id"])
+        victim = _name_with_job(state, jobs, e["victim_id"])
         console.print(f"[bold red]🌙 밤 동안 {escape(victim)}이(가) 살해당했습니다.[/]")
     elif kind == "night_safe":
         console.print("[bold blue]🌙 어젯밤은 아무도 죽지 않았습니다.[/]")
@@ -120,14 +129,19 @@ def run_demo(
     rng = random.Random(seed)
     state = setup_game(player_count=player_count, rng=rng)
     actors: dict[str, PlayerInterface] = build_agents_for_state(state, client=client, rng=rng)
+    jobs: dict[str, str] = {
+        pid: a._persona.job for pid, a in actors.items() if hasattr(a, "_persona")
+    }
 
-    _print_setup(state, console)
+    _print_setup(state, jobs, console)
     console.rule("[bold]Day 1 — 첫째 날 아침[/]")
     console.print("[dim]모두가 모였습니다. 자기소개부터 시작합니다... (LLM 호출 중)[/]")
 
     # Hook public_log so events stream live.
     day_ref = {"current": 1}
-    state.public_log = _StreamingLog(on_append=lambda e: _print_event(state, e, console, day_ref))
+    state.public_log = _StreamingLog(
+        on_append=lambda e: _print_event(state, e, console, day_ref, jobs)
+    )
 
     winner = run_game(state, actors, max_days=max_days)
 
@@ -141,10 +155,11 @@ def run_demo(
     else:
         console.print(f"[yellow]게임 종료 ({winner})[/]")
 
-    rows = [
-        f"  {p.id} {p.name}: {p.role.value} ({'생존' if p.alive else '사망'})"
-        for p in state.players
-    ]
+    rows = []
+    for p in state.players:
+        job = jobs.get(p.id, "")
+        label = f"{p.name}({job})" if job else p.name
+        rows.append(f"  {p.id} {label}: {p.role.value} ({'생존' if p.alive else '사망'})")
     console.print(Panel("\n".join(rows), title="역할 공개", border_style="dim"))
     return winner
 
