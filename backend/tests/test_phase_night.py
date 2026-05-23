@@ -121,3 +121,37 @@ def test_doctor_protects_someone_else_target_dies():
     run_night(state, actors)
     assert state.player_by_id("c1").alive is False
     assert state.last_night_death == "c1"
+
+
+def test_police_investigates_mafia_records_true():
+    players = [
+        Player(id="m1", name="M", role=Role.MAFIA, is_mafia_boss=True),
+        Player(id="p1", name="Cop", role=Role.POLICE),
+        Player(id="c1", name="A", role=Role.CIVILIAN),
+    ]
+    state = GameState(players=players, day_number=0, phase=Phase.NIGHT)
+    actors = {
+        "m1": MockPlayer({"night_kill": "c1"}),
+        "p1": MockPlayer({"night_police_investigate": "m1"}),
+        "c1": MockPlayer({}),
+    }
+    run_night(state, actors)
+    cop = state.player_by_id("p1")
+    assert cop.police_investigations == [("m1", True)]
+
+
+def test_police_investigates_citizen_records_false():
+    players = [
+        Player(id="m1", name="M", role=Role.MAFIA, is_mafia_boss=True),
+        Player(id="p1", name="Cop", role=Role.POLICE),
+        Player(id="c1", name="A", role=Role.CIVILIAN),
+    ]
+    state = GameState(players=players, day_number=0, phase=Phase.NIGHT)
+    actors = {
+        "m1": MockPlayer({"night_kill": "c1"}),
+        "p1": MockPlayer({"night_police_investigate": "c1"}),
+        "c1": MockPlayer({}),
+    }
+    run_night(state, actors)
+    cop = state.player_by_id("p1")
+    assert cop.police_investigations == [("c1", False)]

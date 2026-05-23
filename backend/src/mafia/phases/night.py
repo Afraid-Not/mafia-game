@@ -104,6 +104,16 @@ def run_night(state: GameState, actors: dict[str, PlayerInterface]) -> None:
         protected_id = decision["target_id"]
         doctor.doctor_protections.append(protected_id)
 
+    # Police investigation
+    police = next((p for p in state.alive_players() if p.role == Role.POLICE), None)
+    if police is not None:
+        decision = actors[police.id].decide(
+            DecisionContext(state=state, actor_id=police.id, action="night_police_investigate")
+        )
+        investigated = state.player_by_id(decision["target_id"])
+        is_mafia = investigated.role == Role.MAFIA
+        police.police_investigations.append((investigated.id, is_mafia))
+
     if protected_id == target_id:
         state.last_night_death = None
     else:
