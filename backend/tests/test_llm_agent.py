@@ -21,7 +21,7 @@ def _state_and_actor():
 def test_speak_turn_calls_llm_text_mode():
     state, actor = _state_and_actor()
     client = MagicMock()
-    client.complete.return_value.text = '{"text": "이상한 분위기야"}'
+    client.complete_json.return_value = {"text": "이상한 분위기야"}
     agent = LLMAgent(actor=actor, persona=_PERSONA, client=client)
 
     out = agent.decide(DecisionContext(state=state, actor_id=actor.id, action="speak_turn"))

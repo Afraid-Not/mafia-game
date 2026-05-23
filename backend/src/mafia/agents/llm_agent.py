@@ -42,8 +42,6 @@ class LLMAgent:
         raise ValueError(f"no heuristic for action {ctx.action}")
 
     def _llm(self, ctx: DecisionContext) -> dict[str, Any]:
-        import json as _json
-
         system = build_system_prompt(state=ctx.state, actor=self._actor, persona=self._persona)
         user = build_user_prompt(
             state=ctx.state, actor=self._actor, action=ctx.action, payload=ctx.payload
@@ -52,15 +50,6 @@ class LLMAgent:
             raw = self._client.complete_json(system=system, user=user)
         except LLMError:
             return self._fallback(ctx)
-        # complete_json may return a real dict (from ClaudeClient) or a mock (in tests).
-        # If the result is not a plain dict, try to extract text from complete() instead.
-        if not isinstance(raw, dict):
-            try:
-                resp = self._client.complete(system=system, user=user)
-                text = resp.text if hasattr(resp, "text") else str(resp)
-                raw = _json.loads(text)
-            except Exception:
-                return self._fallback(ctx)
         return self._validate(ctx, raw)
 
     def _validate(self, ctx: DecisionContext, raw: dict[str, Any]) -> dict[str, Any]:
