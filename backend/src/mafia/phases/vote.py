@@ -74,7 +74,12 @@ def run_vote_updown(
         if voter.id == candidate_id:
             continue
         decision = actors[voter.id].decide(
-            DecisionContext(state=state, actor_id=voter.id, action="vote_updown")
+            DecisionContext(
+                state=state,
+                actor_id=voter.id,
+                action="vote_updown",
+                payload={"candidate_id": candidate_id},
+            )
         )
         weight = vote_weight(state, voter.id)
         if decision["vote"] == "yes":
