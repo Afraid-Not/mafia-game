@@ -4,7 +4,7 @@ import random
 
 import pytest
 
-from mafia.cli import build_agents_for_state, run_demo
+from mafia.cli import build_agents_for_state
 from mafia.engine import run_game, setup_game
 from mafia.llm.claude_client import ClaudeClient
 from mafia.models import Phase
