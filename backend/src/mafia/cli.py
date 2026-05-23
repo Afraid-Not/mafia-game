@@ -122,8 +122,8 @@ def run_demo(
     actors: dict[str, PlayerInterface] = build_agents_for_state(state, client=client, rng=rng)
 
     _print_setup(state, console)
-    console.rule("[bold]Day 1 — 첫 번째 밤[/]")
-    console.print("[dim]밤이 흐르고 있습니다... (LLM 호출 중)[/]")
+    console.rule("[bold]Day 1 — 첫째 날 아침[/]")
+    console.print("[dim]모두가 모였습니다. 자기소개부터 시작합니다... (LLM 호출 중)[/]")
 
     # Hook public_log so events stream live.
     day_ref = {"current": 1}

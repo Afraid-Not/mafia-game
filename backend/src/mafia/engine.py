@@ -44,17 +44,14 @@ def run_game(
     actors: dict[str, PlayerInterface],
     max_days: int = 50,
 ) -> str:
-    """Drive the state machine end-to-end. Returns the winning team name."""
-    while state.day_number <= max_days:
-        # NIGHT
-        state.phase = Phase.NIGHT
-        run_night(state, actors)
-        winner = check_winner(state)
-        if winner is not None:
-            state.winner = winner
-            state.phase = Phase.GAME_OVER
-            return winner.value
+    """Drive the state machine end-to-end. Returns the winning team name.
 
+    Day-first ordering (classic Korean mafia): each iteration runs the day's
+    discussion + voting first, then the night's mafia/doctor/police actions.
+    On Day 1 the night has not yet happened, so the morning has no death to
+    announce — players speak from a clean slate.
+    """
+    while state.day_number <= max_days:
         # DAY
         state.phase = Phase.DAY_ROUNDROBIN
         run_day_roundrobin(state, actors)
@@ -71,6 +68,15 @@ def run_game(
             state.phase = Phase.VOTE_UPDOWN
             run_vote_updown(state, actors, candidate_id)
 
+        winner = check_winner(state)
+        if winner is not None:
+            state.winner = winner
+            state.phase = Phase.GAME_OVER
+            return winner.value
+
+        # NIGHT
+        state.phase = Phase.NIGHT
+        run_night(state, actors)
         winner = check_winner(state)
         if winner is not None:
             state.winner = winner

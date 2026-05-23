@@ -51,9 +51,7 @@
 ```
 LOBBY
   ↓ (게임 시작)
-NIGHT
-  ↓
-DAY_ROUNDROBIN
+DAY_ROUNDROBIN     ← Day 1은 사망자 없이 자기소개부터
   ↓
 DAY_FREETALK
   ↓
@@ -65,10 +63,14 @@ VOTE_UPDOWN
   ↓
 CHECK_WIN ──→ GAME_OVER
   ↓ (승부 미결정)
-NIGHT (반복)
+NIGHT              ← 마피아 살해, 의사 보호, 경찰 조사
+  ↓
+CHECK_WIN ──→ GAME_OVER
+  ↓ (승부 미결정)
+DAY_ROUNDROBIN (Day N+1)
 ```
 
-동률 등으로 처형 후보가 없으면 `LAST_WORDS`, `VOTE_UPDOWN` 을 건너뛰고 바로 `CHECK_WIN` → `NIGHT`.
+동률 등으로 처형 후보가 없으면 `LAST_WORDS`, `VOTE_UPDOWN` 을 건너뛰고 바로 `CHECK_WIN` → `NIGHT`. 첫째 날 아침에는 아직 밤이 없었으므로 사망자 안내 없이 곧장 자기소개·토론으로 시작한다.
 
 ### 3.4 밤 페이즈 (NIGHT)
 순차 처리:
