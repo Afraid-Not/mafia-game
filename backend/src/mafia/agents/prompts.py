@@ -213,6 +213,14 @@ def _freetalk_hint(state: GameState) -> str:
     )
 
 
+def _roster_line(state: GameState) -> str:
+    alive = ", ".join(f"{p.id}({p.name})" for p in state.alive_players())
+    return (
+        f"## 생존자 (반드시 이 명단의 실제 ID/이름만 사용. 존재하지 않는 번호나 이름을 "
+        f"만들어내지 마세요)\n{alive}\n\n"
+    )
+
+
 def build_user_prompt(*, state: GameState, actor: Player, action: str, payload: dict) -> str:
     log = _format_public_log(state)
     day_note = ""
@@ -222,13 +230,15 @@ def build_user_prompt(*, state: GameState, actor: Player, action: str, payload: 
             "사망자는 없으며, 누가 누구를 죽였는지에 대한 정보가 전혀 없습니다.\n"
             '"어젯밤" "누가 죽었어" 같은 표현은 사용하지 마세요.\n\n'
         )
-    base = f"{day_note}## 지금까지 공개 로그 (Day {state.day_number})\n{log}\n\n"
+    roster = _roster_line(state)
+    base = f"{day_note}{roster}## 지금까지 공개 로그 (Day {state.day_number})\n{log}\n\n"
 
     if action == "speak_turn":
         hint = _speak_strategy_hint(state, actor)
         return base + (
             f"{hint}\n\n"
             "지금은 낮 토론의 당신 차례입니다 (speak_turn). "
+            "다른 플레이어를 지목할 때는 위 생존자 명단의 **정확한 이름**을 사용하세요. "
             '페르소나 말투를 유지하며 1~3문장.\n{"text": "당신의 발언"}'
         )
 
@@ -236,7 +246,8 @@ def build_user_prompt(*, state: GameState, actor: Player, action: str, payload: 
         hint = _freetalk_hint(state)
         return base + (
             f"{hint}\n\n"
-            '자유 발언 차례입니다 (speak_freetalk). 1~3문장.\n{"text": "발언"}'
+            "자유 발언 차례입니다 (speak_freetalk). 위 생존자 명단의 **정확한 이름**만 "
+            '거론하세요. 1~3문장.\n{"text": "발언"}'
         )
 
     if action == "last_words":
