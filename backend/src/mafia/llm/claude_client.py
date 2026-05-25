@@ -40,7 +40,9 @@ class ClaudeClient:
     ):
         if sdk is None:
             import anthropic  # imported lazily so tests don't need API key
+            from dotenv import load_dotenv
 
+            load_dotenv()  # pick up backend/.env if present; no-op otherwise
             sdk = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
         self._sdk = sdk
         self._model = model

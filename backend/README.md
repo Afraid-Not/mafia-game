@@ -20,9 +20,11 @@ pip install -e ".[dev]"
 ## Run a demo game
 
 ```bash
-export ANTHROPIC_API_KEY=...
+cp .env.example .env   # then edit .env and set ANTHROPIC_API_KEY=...
 python -m mafia.cli --players 6 --seed 0
 ```
+
+`.env`는 CLI와 pytest 양쪽에서 자동 로드된다 (셸의 `export ANTHROPIC_API_KEY=...`도 그대로 동작).
 
 옵션:
 - `--players N` (4~11)
