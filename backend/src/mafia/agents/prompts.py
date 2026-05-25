@@ -139,6 +139,80 @@ def _candidates_list(state: GameState, actor: Player) -> str:
     return ", ".join(f"{p.id}({p.name})" for p in _alive_others(state, actor))
 
 
+def _player_name(state: GameState, pid: str) -> str:
+    return next((p.name for p in state.players if p.id == pid), pid)
+
+
+def _speak_strategy_hint(state: GameState, actor: Player) -> str:
+    """Role-aware guidance: forces commitment to suspicion/claim instead of pure observation."""
+    if state.day_number == 1:
+        return (
+            "**첫날 발언 안내**: 자기소개 후 페르소나 말투에 맞게 "
+            "**신경 쓰이는 사람 한 명**(긍정/부정 무관)을 짧게 짚으세요. "
+            "단순 관찰·메타 코멘트('지켜보자', '정보가 부족하다')는 금지. "
+            "능력 공개는 아직 줄 정보가 없으니 보류."
+        )
+
+    common = (
+        "**발언 안내**: 단순 정리·관찰('지켜보자', '정보가 부족하다')은 **금지**. "
+        "다음 중 하나 이상을 반드시 포함하세요:\n"
+        "- 가장 의심스러운 1명 + 행동적 근거(어떤 발언/투표 패턴 때문인지)\n"
+        "- 또는 가장 신뢰하는 1명 + 그 이유\n"
+        "- 또는 본인/타인의 역할 클레임(진실 또는 거짓)"
+    )
+
+    if actor.role == Role.POLICE and actor.police_investigations:
+        last_tid, last_is_m = actor.police_investigations[-1]
+        last_name = _player_name(state, last_tid)
+        verdict = "마피아" if last_is_m else "시민"
+        role_line = (
+            f"**경찰 전략**: 가장 최근 조사 결과 = {last_name}({verdict}). "
+            "공개하면 시민이 결집되지만 다음 밤 1순위 타겟이 됩니다. "
+            "공개·은닉·시점은 당신의 전략적 판단."
+        )
+    elif actor.role == Role.DOCTOR and actor.doctor_protections:
+        last_pid = actor.doctor_protections[-1]
+        last_name = _player_name(state, last_pid)
+        role_line = (
+            f"**의사 전략**: 가장 최근 보호 = {last_name}. "
+            "보호가 성공했다면 '내가 살렸다'고 클레임해 신뢰를 얻을 수 있으나 "
+            "다음 밤 타겟이 됩니다. 거짓 보호 클레임도 가능."
+        )
+    elif actor.role == Role.MAFIA:
+        role_line = (
+            "**마피아 전략**: 시민/경찰/의사 행세로 시선을 분산하세요. "
+            "진짜 경찰이 등장하면 카운터 클레임(가짜 경찰)으로 혼란 유도. "
+            "동료 마피아를 과하게 옹호하지 말고, 가끔은 의심하는 척도 효과적."
+        )
+    elif actor.role == Role.CLERIC:
+        role_line = (
+            "**성직자 전략**: 정체는 절대 노출 금지(2표의 가치는 비공개일 때만). "
+            "평범한 시민처럼 토론에 참여하세요."
+        )
+    elif actor.role == Role.CIVILIAN:
+        role_line = (
+            "**시민 전략**: 능력은 없지만, 의사·경찰 행세로 마피아를 흔들거나 "
+            "진짜 능력자 클레임을 검증·증폭할 수 있습니다."
+        )
+    else:
+        role_line = ""
+
+    return common + ("\n" + role_line if role_line else "")
+
+
+def _freetalk_hint(state: GameState) -> str:
+    if state.day_number == 1:
+        return (
+            "**자유발언 안내**: 직전 발언 중 하나에 **이름을 명시해** 직접 반응하세요"
+            "(동의/반박/질문). 단순 정리·메타 멘트 금지."
+        )
+    return (
+        "**자유발언 안내**: 직전 발언자 중 한 명을 **이름으로 직접 거론**하며 "
+        "동의·반박·질문하세요. 누군가의 역할 클레임이 있었다면 "
+        "검증·동조·카운터 클레임을 고려하세요. 단순 정리·관찰 멘트 금지."
+    )
+
+
 def build_user_prompt(*, state: GameState, actor: Player, action: str, payload: dict) -> str:
     log = _format_public_log(state)
     day_note = ""
@@ -146,18 +220,24 @@ def build_user_prompt(*, state: GameState, actor: Player, action: str, payload: 
         day_note = (
             "**상황 안내**: 지금은 첫째 날 아침입니다. **아직 밤이 한 번도 지나지 않았으므로**\n"
             "사망자는 없으며, 누가 누구를 죽였는지에 대한 정보가 전혀 없습니다.\n"
-            '"어젯밤" "누가 죽었어" 같은 표현은 사용하지 마세요.\n'
-            "자기소개·인상·관찰부터 시작하세요.\n\n"
+            '"어젯밤" "누가 죽었어" 같은 표현은 사용하지 마세요.\n\n'
         )
     base = f"{day_note}## 지금까지 공개 로그 (Day {state.day_number})\n{log}\n\n"
 
     if action == "speak_turn":
+        hint = _speak_strategy_hint(state, actor)
         return base + (
-            '지금은 낮 토론의 당신 차례입니다 (speak_turn).\n{"text": "당신의 발언 (1~3문장)"}'
+            f"{hint}\n\n"
+            "지금은 낮 토론의 당신 차례입니다 (speak_turn). "
+            '페르소나 말투를 유지하며 1~3문장.\n{"text": "당신의 발언"}'
         )
 
     if action == "speak_freetalk":
-        return base + ('자유 발언 차례입니다 (speak_freetalk).\n{"text": "발언"}')
+        hint = _freetalk_hint(state)
+        return base + (
+            f"{hint}\n\n"
+            '자유 발언 차례입니다 (speak_freetalk). 1~3문장.\n{"text": "발언"}'
+        )
 
     if action == "last_words":
         return base + (
