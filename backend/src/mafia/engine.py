@@ -53,8 +53,12 @@ def run_game(
     """
     while state.day_number <= max_days:
         # DAY
-        state.phase = Phase.DAY_ROUNDROBIN
-        run_day_roundrobin(state, actors)
+        # Day 1 has round-robin intros + freetalk; later days are freetalk-only
+        # because round-robin produces echo-chamber speeches when everyone shares
+        # the same context. Freetalk lets agents react organically to one another.
+        if state.day_number == 1:
+            state.phase = Phase.DAY_ROUNDROBIN
+            run_day_roundrobin(state, actors)
 
         state.phase = Phase.DAY_FREETALK
         run_day_freetalk(state, actors)

@@ -121,7 +121,9 @@ def _format_public_log(state: GameState, max_entries: int = 60) -> str:
             day = e.get("day_number", "?")
             lines.append(
                 f"[Day {day} 밤 — 의사 보호 성공] 마피아가 누군가를 노렸으나 "
-                "의사의 보호로 그 타겟이 생존. 사망자 없음."
+                "의사의 보호로 그 타겟이 생존. 사망자 없음. "
+                "**확정 사실**: 의사가 살아 있고 보호에 성공했음. "
+                "논점은 '의사가 보호한 대상이 누구인지', '그게 곧 마피아의 다음 타겟임'."
             )
         elif kind == "last_words":
             target = state.player_by_id(e["speaker_id"]).name
@@ -257,7 +259,33 @@ def build_user_prompt(*, state: GameState, actor: Player, action: str, payload: 
 
     if action == "vote_nominate":
         candidates = _candidates_list(state, actor)
+        nudge = ""
+        if actor.role == Role.POLICE:
+            mafia_hits = [
+                _player_name(state, tid)
+                for tid, is_m in actor.police_investigations
+                if is_m and any(p.id == tid and p.alive for p in state.players)
+            ]
+            if mafia_hits:
+                names = ", ".join(mafia_hits)
+                nudge = (
+                    f"**경찰 환기**: 당신은 {names}이(가) 마피아임을 직접 확인했습니다. "
+                    "일반적으로 이 정보를 우선시해 그 대상을 지목하는 것이 시민 승리에 유리합니다 "
+                    "(분위기에 휩쓸려 다른 사람을 지목하지 마세요).\n"
+                )
+        elif actor.role == Role.MAFIA and actor.known_mafia_ids:
+            allies = ", ".join(
+                _player_name(state, mid)
+                for mid in actor.known_mafia_ids
+                if any(p.id == mid and p.alive for p in state.players)
+            )
+            if allies:
+                nudge = (
+                    f"**마피아 환기**: 동료({allies})를 절대 지목하지 마세요. "
+                    "능력자(경찰·의사로 의심되는 시민)나 영향력 큰 시민을 노리는 게 유리합니다.\n"
+                )
         return base + (
+            f"{nudge}"
             f"1차 투표: 처형하고 싶은 사람 1명을 지목하세요.\n"
             f"후보: {candidates}\n"
             '{"target_id": "p_X", "reasoning": "이유"}'
